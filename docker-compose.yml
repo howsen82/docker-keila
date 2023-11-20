@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  keila:
+    container_name: keila
+    image: pentacent/keila
+    hostname: keila
+    environment:
+      - SECRET_KEY_BASE=KjCaHdb4PUfSmSHbeV6jWUqTptgW4N6Q2aWNv3mT9ZWxKYRcJhgyfqbkaGR4WQay
+      - DB_URL=postgres://keilauser:keilapass@postgres/keila
+      - USER_CONTENT_DIR=/uploads
+      - KEILA_USER=<email>
+      - KEILA_PASSWORD=<password>
+      - URL_SCHEMA=https
+      - MAILER_SMTP_HOST=smtp.gmail.com
+      - MAILER_SMTP_PORT=465
+      - MAILER_SMTP_USER=<email>@gmail.com
+      - MAILER_SMTP_PASSWORD=<email_password>
+      - MAILER_SMTP_FROM_EMAIL=<email>@gmail.com
+      - MAILER_ENABLE_SSL=true
+      - MAILER_ENABLE_STARTTLS=false
+    volumes:
+      - /data/keila/uploads:/uploads
+    ports:
+      - 4000:4000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:4000
+    
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      - POSTGRES_DB=keila
+      - POSTGRES_USER=keilauser
+      - POSTGRES_PASSWORD=keilapass
+    volumes:
+      - /data/keila/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "keila", "-U", "keilauser"]
+      interval: 10s
+      timeout: 45s
+      retries: 10
+    restart: unless-stopped
